@@ -1,10 +1,50 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { HiOutlineUser, HiOutlineMail, HiOutlineLockClosed, HiEye, HiEyeOff } from 'react-icons/hi'
 import { FcGoogle } from 'react-icons/fc'
 import { FaCoffee } from 'react-icons/fa'
+import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth'
+import { auth, googleProvider } from '../firebase'
+
+const API_URL = 'http://localhost:5000'
+
+async function saveUserToDB(user, provider, customName = '') {
+  try {
+    await fetch(`${API_URL}/api/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid: user.uid,
+        name: customName || user.displayName || '',
+        email: user.email,
+        photoURL: user.photoURL || '',
+        provider,
+      }),
+    })
+  } catch (err) {
+    console.error('Failed to sync user to database:', err)
+  }
+}
+
+function getFriendlyError(code) {
+  switch (code) {
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists. Please log in.'
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.'
+    case 'auth/weak-password':
+      return 'Password should be at least 6 characters.'
+    case 'auth/popup-closed-by-user':
+      return 'Google sign-in was cancelled.'
+    case 'auth/popup-blocked':
+      return 'Popup was blocked by your browser. Please allow popups.'
+    default:
+      return 'Failed to register. Please check your details and try again.'
+  }
+}
 
 export default function Register() {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -14,6 +54,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -23,17 +64,59 @@ export default function Register() {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleEmailRegister = async (e) => {
     e.preventDefault()
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match. Please verify.')
+    setError('')
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long.')
       return
     }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match. Please verify.')
+      return
+    }
+
     setIsLoading(true)
-    setTimeout(() => {
+    try {
+      // 1. Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email.trim(),
+        formData.password
+      )
+
+      // 2. Update display name in Firebase
+      if (formData.fullName.trim()) {
+        await updateProfile(userCredential.user, {
+          displayName: formData.fullName.trim(),
+        })
+      }
+
+      // 3. Save user info to MongoDB backend
+      await saveUserToDB(userCredential.user, 'email', formData.fullName.trim())
+
+      navigate('/')
+    } catch (err) {
+      setError(getFriendlyError(err.code))
+    } finally {
       setIsLoading(false)
-      alert(`Registration submitted for: ${formData.fullName}`)
-    }, 600)
+    }
+  }
+
+  const handleGoogleRegister = async () => {
+    setError('')
+    setIsLoading(true)
+    try {
+      const result = await signInWithPopup(auth, googleProvider)
+      await saveUserToDB(result.user, 'google')
+      navigate('/')
+    } catch (err) {
+      setError(getFriendlyError(err.code))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -52,14 +135,23 @@ export default function Register() {
               Create an Account
             </h1>
             <p className="mt-1 text-xs text-[#7A695E]">
-              Register to get started
+              Register with Firebase and connect with our Cafe
             </p>
           </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium leading-relaxed">
+              {error}
+            </div>
+          )}
 
           {/* Social Google Button */}
           <button
             type="button"
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-[#DFD7CC] bg-[#FCFAF8] hover:bg-[#F7F2EA] text-[#4A3B32] font-semibold text-xs transition-all duration-200 hover:shadow-xs active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-amber-600/30"
+            onClick={handleGoogleRegister}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-[#DFD7CC] bg-[#FCFAF8] hover:bg-[#F7F2EA] text-[#4A3B32] font-semibold text-xs transition-all duration-200 hover:shadow-xs active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-amber-600/30 disabled:opacity-60"
           >
             <FcGoogle className="w-4 h-4" />
             <span>Continue with Google</span>
@@ -78,7 +170,7 @@ export default function Register() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form onSubmit={handleEmailRegister} className="space-y-3.5">
             
             {/* Full Name */}
             <div>
@@ -232,3 +324,4 @@ export default function Register() {
     </div>
   )
 }
+

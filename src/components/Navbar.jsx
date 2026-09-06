@@ -1,13 +1,24 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { FaCoffee } from 'react-icons/fa'
-import { HiMenuAlt3, HiX } from 'react-icons/hi'
+import { HiMenuAlt3, HiX, HiOutlineLogout } from 'react-icons/hi'
+import { useAuth } from '../context/AuthContext'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const { user, logout } = useAuth()
 
   const toggleMenu = () => setIsOpen(!isOpen)
   const closeMenu = () => setIsOpen(false)
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      closeMenu()
+    } catch (err) {
+      console.error('Logout error:', err)
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-[#FDFBF7]/90 backdrop-blur-md border-b border-[#EADDD0] shadow-xs transition-all duration-200">
@@ -28,7 +39,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Middle: 2 Links (Home & About Us) */}
+          {/* Middle: Links */}
           <nav className="hidden md:flex items-center gap-1 bg-[#F4EDE4]/60 p-1.5 rounded-xl border border-[#EBE2D7]">
             <NavLink
               to="/"
@@ -56,14 +67,51 @@ export default function Navbar() {
             </NavLink>
           </nav>
 
-          {/* Right Side: Login Button */}
-          <div className="hidden md:flex items-center">
-            <Link
-              to="/login"
-              className="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#6F4E37] hover:bg-[#573d2a] text-white shadow-sm hover:shadow-md hover:shadow-amber-950/20 active:scale-[0.98] transition-all duration-200"
-            >
-              Login
-            </Link>
+          {/* Right Side: Auth status */}
+          <div className="hidden md:flex items-center gap-3">
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 bg-[#F4EDE4]/70 py-1.5 px-3 rounded-xl border border-[#EBE2D7]">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName || 'User'}
+                      className="w-8 h-8 rounded-full object-cover border border-amber-300"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[#6F4E37] text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs">
+                      {(user.displayName || user.email || 'U')[0]}
+                    </div>
+                  )}
+                  <span className="text-sm font-semibold text-[#3B2314] max-w-[140px] truncate">
+                    {user.displayName || user.email.split('@')[0]}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-[#EFE6DC] hover:bg-[#E2D5C7] text-[#543825] transition-all duration-200"
+                  title="Logout"
+                >
+                  <HiOutlineLogout className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="px-5 py-2 rounded-xl text-sm font-bold text-[#6F4E37] hover:bg-[#F4EDE4] transition-all duration-200"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-5 py-2 rounded-xl text-sm font-bold bg-[#6F4E37] hover:bg-[#573d2a] text-white shadow-sm hover:shadow-md hover:shadow-amber-950/20 active:scale-[0.98] transition-all duration-200"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Toggle Button */}
@@ -84,7 +132,7 @@ export default function Navbar() {
       {/* Mobile Dropdown Menu */}
       <div
         className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out border-t border-[#EADDD0] bg-[#FAF6F0] ${
-          isOpen ? 'max-h-64 opacity-100 py-4 px-4 shadow-lg' : 'max-h-0 opacity-0 py-0 px-4'
+          isOpen ? 'max-h-80 opacity-100 py-4 px-4 shadow-lg' : 'max-h-0 opacity-0 py-0 px-4'
         }`}
       >
         <div className="flex flex-col space-y-2">
@@ -114,13 +162,47 @@ export default function Navbar() {
           >
             About Us
           </NavLink>
-          <Link
-            to="/login"
-            onClick={closeMenu}
-            className="w-full text-center mt-2 px-4 py-2.5 rounded-lg font-bold bg-[#6F4E37] text-white hover:bg-[#573d2a] shadow-sm transition-colors"
-          >
-            Login
-          </Link>
+
+          {user ? (
+            <div className="pt-2 border-t border-[#EBE2D7] space-y-2">
+              <div className="px-4 py-2 flex items-center gap-3 bg-[#F4EDE4]/60 rounded-lg">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#6F4E37] text-white flex items-center justify-center font-bold text-xs">
+                    {(user.displayName || user.email || 'U')[0]}
+                  </div>
+                )}
+                <div className="overflow-hidden">
+                  <p className="text-xs font-bold text-[#3B2314] truncate">{user.displayName || 'User'}</p>
+                  <p className="text-[11px] text-[#7A695E] truncate">{user.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full text-center px-4 py-2.5 rounded-lg font-bold bg-[#EFE6DC] text-[#543825] hover:bg-[#E2D5C7] transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="pt-2 border-t border-[#EBE2D7] space-y-2">
+              <Link
+                to="/login"
+                onClick={closeMenu}
+                className="w-full block text-center px-4 py-2.5 rounded-lg font-bold bg-[#6F4E37] text-white hover:bg-[#573d2a] shadow-sm transition-colors"
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                onClick={closeMenu}
+                className="w-full block text-center px-4 py-2.5 rounded-lg font-bold border border-[#6F4E37] text-[#6F4E37] hover:bg-[#F4EDE4] transition-colors"
+              >
+                Register
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>
