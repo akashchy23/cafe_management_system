@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { FaCoffee } from 'react-icons/fa'
 
 export default function About() {
@@ -18,3 +19,5 @@ export default function About() {
     </div>
   )
 }
+=======
+>>>>>>> bfd5d1c91c32aa109eaf6b6ccf724cab9c1183e8
