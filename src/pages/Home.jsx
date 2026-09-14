@@ -256,4 +256,8 @@ export default function Home() {
       </section>
     </div>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 305e77c (added ai recomandation on admin panel)

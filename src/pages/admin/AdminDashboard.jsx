@@ -12,6 +12,9 @@ import {
   FaCalendarAlt,
   FaArrowRight,
   FaSync,
+  FaChartLine,
+  FaUserTie,
+  FaBell,
 } from 'react-icons/fa'
 import api from '../../api/axios'
 
@@ -54,7 +57,7 @@ export default function AdminDashboard() {
             Dashboard Overview
           </h1>
           <p className="text-xs text-[#7A695E] mt-1">
-            Real-time cafe revenue, pending orders, and business metrics.
+            Real-time cafe revenue, pending orders, inventory warnings, and business metrics.
           </p>
         </div>
 
@@ -66,6 +69,24 @@ export default function AdminDashboard() {
           <span>Refresh Data</span>
         </button>
       </div>
+
+      {/* Low Stock Warning Banner (Module 4.5) */}
+      {stats?.lowStockItems > 0 && (
+        <div className="bg-red-50 border border-red-200 p-4 rounded-2xl flex items-center justify-between gap-3 text-xs text-red-900 animate-pulse">
+          <div className="flex items-center gap-2.5">
+            <FaExclamationTriangle className="text-red-600 w-5 h-5 shrink-0" />
+            <span>
+              <strong>Inventory Warning:</strong> {stats.lowStockItems} ingredient(s) are below their minimum stock threshold or completely depleted.
+            </span>
+          </div>
+          <Link
+            to="/admin/inventory"
+            className="px-3 py-1.5 rounded-lg bg-red-600 text-white font-bold text-xs shrink-0 hover:bg-red-700"
+          >
+            Review Inventory
+          </Link>
+        </div>
+      )}
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -81,7 +102,9 @@ export default function AdminDashboard() {
           <div className="text-2xl sm:text-3xl font-black text-[#3B2314]">
             ${stats?.totalRevenue?.toFixed(2) || '0.00'}
           </div>
-          <p className="text-[10px] text-emerald-700 font-semibold">From all confirmed orders</p>
+          <p className="text-[10px] text-emerald-700 font-semibold">
+            ${stats?.todayRevenue?.toFixed(2) || '0.00'} earned today
+          </p>
         </div>
 
         {/* Total Orders */}
@@ -142,6 +165,16 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-[#EBE2D7] flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center shrink-0">
+            <FaUserTie />
+          </div>
+          <div>
+            <div className="text-lg font-black text-[#3B2314]">{stats?.totalEmployees || 0}</div>
+            <div className="text-[11px] text-[#8C7A6E]">Employees & Staff</div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-[#EBE2D7] flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
             <FaUtensils />
           </div>
@@ -152,25 +185,70 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-[#EBE2D7] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+            <FaUsers />
+          </div>
+          <div>
+            <div className="text-lg font-black text-[#3B2314]">{stats?.activeGroupOrders || 0}</div>
+            <div className="text-[11px] text-[#8C7A6E]">Active Group Carts</div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Quick Action Navigation Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Link
+          to="/admin/analytics"
+          className="p-4 rounded-2xl bg-white border border-[#EBE2D7] hover:border-amber-500 shadow-2xs flex items-center gap-3 transition-all group"
+        >
+          <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors">
+            <FaChartLine />
+          </div>
+          <div>
+            <span className="font-extrabold text-xs text-[#3B2314] block">Sales Analytics</span>
+            <span className="text-[10px] text-[#8C7A6E]">Revenue Trends</span>
+          </div>
+        </Link>
+
+        <Link
+          to="/admin/reports"
+          className="p-4 rounded-2xl bg-white border border-[#EBE2D7] hover:border-amber-500 shadow-2xs flex items-center gap-3 transition-all group"
+        >
+          <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+            <FaDollarSign />
+          </div>
+          <div>
+            <span className="font-extrabold text-xs text-[#3B2314] block">Financial Reports</span>
+            <span className="text-[10px] text-[#8C7A6E]">Gross & Net Ledger</span>
+          </div>
+        </Link>
+
+        <Link
+          to="/admin/coupons"
+          className="p-4 rounded-2xl bg-white border border-[#EBE2D7] hover:border-amber-500 shadow-2xs flex items-center gap-3 transition-all group"
+        >
+          <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center group-hover:bg-rose-600 group-hover:text-white transition-colors">
             <FaTags />
           </div>
           <div>
-            <div className="text-lg font-black text-[#3B2314]">{stats?.totalCategories || 0}</div>
-            <div className="text-[11px] text-[#8C7A6E]">Categories</div>
+            <span className="font-extrabold text-xs text-[#3B2314] block">Manage Coupons</span>
+            <span className="text-[10px] text-[#8C7A6E]">Discount Codes</span>
           </div>
-        </div>
+        </Link>
 
-        <div className="bg-white p-4 rounded-2xl border border-[#EBE2D7] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-            <FaCalendarAlt />
+        <Link
+          to="/admin/notifications"
+          className="p-4 rounded-2xl bg-white border border-[#EBE2D7] hover:border-amber-500 shadow-2xs flex items-center gap-3 transition-all group"
+        >
+          <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+            <FaBell />
           </div>
           <div>
-            <div className="text-lg font-black text-[#3B2314]">{stats?.activeReservations || 0}</div>
-            <div className="text-[11px] text-[#8C7A6E]">Active Bookings</div>
+            <span className="font-extrabold text-xs text-[#3B2314] block">Send Alerts</span>
+            <span className="text-[10px] text-[#8C7A6E]">Broadcast Updates</span>
           </div>
-        </div>
-
+        </Link>
       </div>
 
       {/* Recent Orders Section */}

@@ -75,7 +75,7 @@ export function CartProvider({ children }) {
     }
   }
 
-  const addToCart = async (foodId, quantity = 1, silent = false) => {
+  const addToCart = async (foodOrId, quantity = 1, silent = false) => {
     if (!user) {
       Swal.fire({
         icon: 'info',
@@ -86,33 +86,58 @@ export function CartProvider({ children }) {
       return false
     }
 
+    const foodId = typeof foodOrId === 'object' ? (foodOrId._id || foodOrId.id || foodOrId.name) : foodOrId
+    const foodItemObj = typeof foodOrId === 'object' ? foodOrId : null
+    const addQty = Math.max(1, parseInt(quantity) || 1)
+
     try {
+      let updatedCart = null
       try {
-        const res = await api.post('/api/cart', { foodId, quantity })
+        const res = await api.post('/api/cart', {
+          foodId,
+          quantity: addQty,
+          foodItem: foodItemObj,
+        })
         if (res.data?.cart) {
-          setCart(res.data.cart)
+          updatedCart = res.data.cart
+          setCart(updatedCart)
         }
       } catch (netErr) {
         console.warn('Backend unavailable, using local cart fallback:', netErr)
-        const staticItem = STATIC_FOODS.find((f) => f._id === foodId || f.name.toLowerCase() === foodId.toLowerCase())
+        let matchedItem = foodItemObj
+        if (!matchedItem) {
+          matchedItem = STATIC_FOODS.find((f) => 
+            (f._id && String(f._id) === String(foodId)) || 
+            (f.name && f.name.toLowerCase() === String(foodId).toLowerCase())
+          )
+        }
+
         const items = [...(cart.items || [])]
-        const existingIdx = items.findIndex((i) => i.foodId === foodId)
-        
+        const foodKey = String(matchedItem?._id || foodId)
+        const foodName = matchedItem?.name || matchedItem?.foodName || String(foodId)
+        const price = Number(matchedItem?.price) || 5.0
+        const image = matchedItem?.image || ''
+
+        const existingIdx = items.findIndex((i) => 
+          (i.foodId && String(i.foodId) === foodKey) || 
+          (i.foodName && i.foodName.toLowerCase() === foodName.toLowerCase())
+        )
+
         if (existingIdx > -1) {
-          items[existingIdx].quantity += quantity
+          items[existingIdx].quantity += addQty
           items[existingIdx].subtotal = items[existingIdx].quantity * items[existingIdx].price
-        } else if (staticItem) {
+        } else {
           items.push({
-            foodId: staticItem._id,
-            foodName: staticItem.name,
-            price: staticItem.price,
-            image: staticItem.image,
-            quantity: quantity,
-            subtotal: staticItem.price * quantity,
+            foodId: foodKey,
+            foodName,
+            price,
+            image,
+            quantity: addQty,
+            subtotal: price * addQty,
           })
         }
-        const updated = recalculateLocalCart(items)
-        setCart(updated)
+        updatedCart = recalculateLocalCart(items)
+        setCart(updatedCart)
       }
 
       if (!silent) {

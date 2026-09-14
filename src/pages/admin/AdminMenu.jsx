@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react'
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes, FaUtensils } from 'react-icons/fa'
+import {
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaSearch,
+  FaCheck,
+  FaTimes,
+  FaUtensils,
+  FaLeaf,
+  FaSmile,
+  FaFire,
+} from 'react-icons/fa'
 import api from '../../api/axios'
 import Swal from 'sweetalert2'
 
@@ -19,6 +30,11 @@ export default function AdminMenu() {
     category: '',
     price: '',
     image: '',
+    ingredients: '',
+    moods: '',
+    tags: '',
+    healthy: false,
+    calories: 0,
     isAvailable: true,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -51,6 +67,11 @@ export default function AdminMenu() {
       category: categories[0]?.name || 'Coffee & Espresso',
       price: '',
       image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=500',
+      ingredients: 'Espresso, Steamed Milk',
+      moods: 'Happy, Energetic',
+      tags: 'Sweet, Creamy',
+      healthy: false,
+      calories: 200,
       isAvailable: true,
     })
     setModalOpen(true)
@@ -64,6 +85,11 @@ export default function AdminMenu() {
       category: food.category,
       price: food.price,
       image: food.image,
+      ingredients: Array.isArray(food.ingredients) ? food.ingredients.join(', ') : (food.ingredients || ''),
+      moods: Array.isArray(food.moods) ? food.moods.join(', ') : (food.moods || ''),
+      tags: Array.isArray(food.tags) ? food.tags.join(', ') : (food.tags || ''),
+      healthy: Boolean(food.healthy),
+      calories: food.calories || 0,
       isAvailable: food.isAvailable !== false,
     })
     setModalOpen(true)
@@ -160,10 +186,10 @@ export default function AdminMenu() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#3B2314] tracking-tight">
-            Manage Food Menu
+            Manage Food Menu & Recommendation Metadata
           </h1>
           <p className="text-xs text-[#7A695E] mt-1">
-            Add new delicacies, adjust pricing, edit recipes, and manage availability.
+            Add delicacies, adjust pricing, configure ingredients, and set mood & healthy tags.
           </p>
         </div>
 
@@ -223,6 +249,7 @@ export default function AdminMenu() {
                   <th className="py-3.5 px-4">Item</th>
                   <th className="py-3.5 px-4">Category</th>
                   <th className="py-3.5 px-4">Price</th>
+                  <th className="py-3.5 px-4">Moods & Tags</th>
                   <th className="py-3.5 px-4">Availability</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
@@ -242,6 +269,11 @@ export default function AdminMenu() {
                           <p className="text-[11px] text-[#8C7A6E] line-clamp-1 max-w-xs">
                             {food.description}
                           </p>
+                          {food.healthy && (
+                            <span className="inline-flex items-center gap-1 text-[9px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded mt-0.5">
+                              <FaLeaf className="w-2 h-2" /> Healthy Choice
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -252,6 +284,15 @@ export default function AdminMenu() {
                     </td>
                     <td className="py-3 px-4 font-black text-sm text-[#6F4E37]">
                       ${Number(food.price).toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4 text-[#6F5D53]">
+                      <div className="flex flex-wrap gap-1 max-w-[180px]">
+                        {food.moods?.map((m) => (
+                          <span key={m} className="text-[9px] font-bold bg-amber-50 text-amber-900 px-1.5 py-0.5 rounded">
+                            #{m}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <button
@@ -303,10 +344,10 @@ export default function AdminMenu() {
       {/* Add/Edit Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-[#EBE2D7] relative animate-in zoom-in-95 space-y-5">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-[#EBE2D7] relative animate-in zoom-in-95 space-y-4">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h2 className="text-xl font-extrabold text-[#3B2314]">
-                {editingFood ? 'Edit Food Item' : 'Add New Food Item'}
+                {editingFood ? 'Edit Food Item & Metadata' : 'Add New Food Item'}
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
@@ -316,7 +357,7 @@ export default function AdminMenu() {
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="space-y-4">
+            <form onSubmit={handleFormSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold uppercase text-[#54433A] mb-1">
                   Food Name *
@@ -327,7 +368,7 @@ export default function AdminMenu() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Vanilla Bean Flat White"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#DED4C7] text-xs text-[#3B2314] focus:outline-none focus:ring-2 focus:ring-amber-700/30"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#DED4C7] text-xs text-[#3B2314] focus:outline-none"
                 />
               </div>
 
@@ -377,19 +418,6 @@ export default function AdminMenu() {
                   placeholder="https://images.unsplash.com/photo-..."
                   className="w-full px-3.5 py-2 rounded-xl border border-[#DED4C7] text-xs text-[#3B2314] focus:outline-none"
                 />
-                {formData.image && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <img
-                      src={formData.image}
-                      alt="Preview"
-                      className="w-12 h-12 rounded-lg object-cover border"
-                      onError={(e) => {
-                        e.target.style.display = 'none'
-                      }}
-                    />
-                    <span className="text-[10px] text-[#8C7A6E]">Image Preview</span>
-                  </div>
-                )}
               </div>
 
               <div>
@@ -403,6 +431,82 @@ export default function AdminMenu() {
                   placeholder="Description of the food item, notes, taste profile..."
                   className="w-full px-3.5 py-2 rounded-xl border border-[#DED4C7] text-xs text-[#3B2314] focus:outline-none resize-none"
                 />
+              </div>
+
+              {/* Recommendation Metadata */}
+              <div className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#E8DFD3] space-y-3">
+                <span className="text-xs font-extrabold text-[#3B2314] block">
+                  AI Recommendation & Search Metadata
+                </span>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-[#8C7A6E] mb-1">
+                    Ingredients (Comma Separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.ingredients}
+                    onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
+                    placeholder="Espresso, Oat Milk, Vanilla"
+                    className="w-full px-3 py-2 rounded-xl border border-[#DED4C7] text-xs bg-white text-[#3B2314] focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-[#8C7A6E] mb-1">
+                      Mood Tags (e.g. Happy, Energetic, Focused)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.moods}
+                      onChange={(e) => setFormData({ ...formData, moods: e.target.value })}
+                      placeholder="Happy, Focused"
+                      className="w-full px-3 py-2 rounded-xl border border-[#DED4C7] text-xs bg-white text-[#3B2314] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-[#8C7A6E] mb-1">
+                      Tags (e.g. Sweet, Creamy, High Protein)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.tags}
+                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                      placeholder="Sweet, Low Sugar"
+                      className="w-full px-3 py-2 rounded-xl border border-[#DED4C7] text-xs bg-white text-[#3B2314] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-[#8C7A6E] mb-1">
+                      Calories (kcal)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.calories}
+                      onChange={(e) => setFormData({ ...formData, calories: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-[#DED4C7] text-xs bg-white text-[#3B2314] focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-4">
+                    <input
+                      type="checkbox"
+                      id="healthyCheck"
+                      checked={formData.healthy}
+                      onChange={(e) => setFormData({ ...formData, healthy: e.target.checked })}
+                      className="rounded text-emerald-700 focus:ring-emerald-700"
+                    />
+                    <label htmlFor="healthyCheck" className="text-xs font-bold text-[#3B2314]">
+                      Healthy Choice (🌱)
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 pt-1">

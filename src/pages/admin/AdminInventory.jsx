@@ -1,12 +1,26 @@
 import { useState, useEffect } from 'react'
-import { FaBoxes, FaPlus, FaExclamationTriangle, FaEdit, FaTrash, FaCheckCircle, FaMinus } from 'react-icons/fa'
+import {
+  FaBoxes,
+  FaPlus,
+  FaExclamationTriangle,
+  FaEdit,
+  FaTrash,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaSearch,
+  FaFilter,
+  FaDollarSign,
+} from 'react-icons/fa'
 import api from '../../api/axios'
 import Swal from 'sweetalert2'
 
 export default function AdminInventory() {
   const [ingredients, setIngredients] = useState([])
+  const [summary, setSummary] = useState(null)
   const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('All')
 
   // Modal
   const [modalOpen, setModalOpen] = useState(false)
@@ -17,7 +31,7 @@ export default function AdminInventory() {
     unit: 'kg',
     minimumStock: 5,
     supplierId: '',
-    costPerUnit: 0,
+    purchasePrice: 0,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -25,11 +39,12 @@ export default function AdminInventory() {
     try {
       setLoading(true)
       const [invRes, supRes] = await Promise.all([
-        api.get('/api/inventory'),
+        api.get('/api/inventory', { params: { search, status: statusFilter } }),
         api.get('/api/suppliers'),
       ])
-      setIngredients(invRes.data)
-      setSuppliers(supRes.data)
+      setIngredients(invRes.data.ingredients || [])
+      setSummary(invRes.data.summary || null)
+      setSuppliers(supRes.data || [])
     } catch (err) {
       console.error('Failed to load inventory data:', err)
     } finally {
@@ -39,7 +54,7 @@ export default function AdminInventory() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [search, statusFilter])
 
   const openAddModal = () => {
     setEditingItem(null)
@@ -49,7 +64,7 @@ export default function AdminInventory() {
       unit: 'kg',
       minimumStock: 5,
       supplierId: suppliers[0]?.name || '',
-      costPerUnit: 0,
+      purchasePrice: 0,
     })
     setModalOpen(true)
   }
@@ -62,7 +77,7 @@ export default function AdminInventory() {
       unit: item.unit,
       minimumStock: item.minimumStock,
       supplierId: item.supplierId || '',
-      costPerUnit: item.costPerUnit || 0,
+      purchasePrice: item.purchasePrice || item.costPerUnit || 0,
     })
     setModalOpen(true)
   }
@@ -103,7 +118,7 @@ export default function AdminInventory() {
   const handleAdjustQuantity = async (item, delta) => {
     const newQty = Math.max(0, Number(item.quantity) + delta)
     try {
-      await api.patch(`/api/inventory/${item._id}`, { quantity: newQty })
+      await api.patch(`/api/inventory/${item._id}/stock`, { quantity: newQty })
       loadData()
     } catch (err) {
       console.error('Failed to adjust quantity:', err)
@@ -128,8 +143,6 @@ export default function AdminInventory() {
     }
   }
 
-  const lowStockCount = ingredients.filter((i) => i.isLowStock).length
-
   return (
     <div className="space-y-6">
       
@@ -140,25 +153,93 @@ export default function AdminInventory() {
             Inventory & Ingredient Stocks
           </h1>
           <p className="text-xs text-[#7A695E] mt-1">
-            Monitor raw coffee beans, dairy, syrups, and track minimum threshold alerts.
+            Monitor raw coffee beans, dairy, syrups, suppliers, and track minimum threshold alerts.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {lowStockCount > 0 && (
-            <div className="px-3.5 py-1.5 bg-red-100 text-red-800 rounded-xl text-xs font-bold border border-red-200 flex items-center gap-1.5 animate-pulse">
-              <FaExclamationTriangle />
-              <span>{lowStockCount} Low Stock Alert(s)</span>
-            </div>
-          )}
+        <button
+          onClick={openAddModal}
+          className="px-4 py-2.5 rounded-xl font-bold text-xs bg-[#6F4E37] text-white hover:bg-[#543825] shadow-sm flex items-center gap-2 self-start sm:self-auto"
+        >
+          <FaPlus />
+          <span>Add Ingredient</span>
+        </button>
+      </div>
 
-          <button
-            onClick={openAddModal}
-            className="px-4 py-2.5 rounded-xl font-bold text-xs bg-[#6F4E37] text-white hover:bg-[#543825] shadow-sm flex items-center gap-2"
-          >
-            <FaPlus />
-            <span>Add Ingredient</span>
-          </button>
+      {/* Stock Summary Metrics Cards (Module 4.5) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-3xl border border-[#EBE2D7] shadow-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-[#8C7A6E] uppercase">Total Ingredients</span>
+            <FaBoxes className="text-amber-800" />
+          </div>
+          <div className="text-2xl font-black text-[#3B2314]">
+            {summary?.totalIngredients || ingredients.length}
+          </div>
+          <p className="text-[10px] text-gray-500">Tracked raw items</p>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl border border-[#EBE2D7] shadow-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-[#8C7A6E] uppercase">Available Stock</span>
+            <FaCheckCircle className="text-emerald-600" />
+          </div>
+          <div className="text-2xl font-black text-emerald-700">
+            {summary?.availableStock || 0}
+          </div>
+          <p className="text-[10px] text-emerald-600">Above minimum threshold</p>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl border border-[#EBE2D7] shadow-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-[#8C7A6E] uppercase">Low Stock Alert</span>
+            <FaExclamationTriangle className="text-amber-600" />
+          </div>
+          <div className="text-2xl font-black text-amber-700">
+            {summary?.lowStock || 0}
+          </div>
+          <p className="text-[10px] text-amber-600">Restocking recommended</p>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl border border-[#EBE2D7] shadow-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-[#8C7A6E] uppercase">Out of Stock</span>
+            <FaTimesCircle className="text-red-600" />
+          </div>
+          <div className="text-2xl font-black text-red-700">
+            {summary?.outOfStock || 0}
+          </div>
+          <p className="text-[10px] text-red-600">0 quantity remaining</p>
+        </div>
+      </div>
+
+      {/* Search & Filter Controls */}
+      <div className="bg-white p-4 rounded-2xl border border-[#EBE2D7] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="relative flex-1 max-w-sm">
+          <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search ingredients or suppliers..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#DED4C7] focus:outline-none text-[#3B2314]"
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto">
+          {['All', 'Available', 'Low Stock', 'Out of Stock'].map((st) => (
+            <button
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
+                statusFilter === st
+                  ? 'bg-[#6F4E37] text-white shadow-xs'
+                  : 'bg-[#FAF6F0] text-gray-700 hover:bg-[#EFE6DC]'
+              }`}
+            >
+              {st}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -170,7 +251,7 @@ export default function AdminInventory() {
           </div>
         ) : ingredients.length === 0 ? (
           <div className="py-16 text-center text-xs text-[#8C7A6E]">
-            No ingredients in inventory. Click &ldquo;Add Ingredient&rdquo; to track raw materials.
+            No ingredients match your search or filter.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -180,8 +261,9 @@ export default function AdminInventory() {
                   <th className="py-3.5 px-4">Ingredient Name</th>
                   <th className="py-3.5 px-4">Current Stock</th>
                   <th className="py-3.5 px-4">Min. Threshold</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4">Assigned Supplier</th>
+                  <th className="py-3.5 px-4">Purchase Price</th>
+                  <th className="py-3.5 px-4">Stock Status</th>
+                  <th className="py-3.5 px-4">Supplier</th>
                   <th className="py-3.5 px-4">Quick Adjust</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
@@ -191,7 +273,11 @@ export default function AdminInventory() {
                   <tr
                     key={item._id}
                     className={`transition-colors ${
-                      item.isLowStock ? 'bg-red-50/40 hover:bg-red-50/70' : 'hover:bg-[#FAF6F0]/40'
+                      item.stockStatus === 'Out of Stock'
+                        ? 'bg-red-100/50 hover:bg-red-100/80'
+                        : item.stockStatus === 'Low Stock'
+                        ? 'bg-amber-50/70 hover:bg-amber-100/70'
+                        : 'hover:bg-[#FAF6F0]/40'
                     }`}
                   >
                     <td className="py-3 px-4 font-bold text-sm text-[#3B2314]">
@@ -206,16 +292,25 @@ export default function AdminInventory() {
                       {item.minimumStock} {item.unit}
                     </td>
 
+                    <td className="py-3 px-4 text-[#54433A] font-semibold">
+                      ${(item.purchasePrice || item.costPerUnit || 0).toFixed(2)} / {item.unit}
+                    </td>
+
                     <td className="py-3 px-4">
-                      {item.isLowStock ? (
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-red-100 text-red-800 border border-red-300 flex items-center gap-1 w-fit">
+                      {item.stockStatus === 'Out of Stock' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-red-600 text-white flex items-center gap-1 w-fit">
+                          <FaTimesCircle className="w-2.5 h-2.5" />
+                          <span>Out of Stock</span>
+                        </span>
+                      ) : item.stockStatus === 'Low Stock' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 w-fit">
                           <FaExclamationTriangle className="w-2.5 h-2.5" />
-                          <span>Low Stock</span>
+                          <span>Low Stock ({item.quantity} {item.unit} left)</span>
                         </span>
                       ) : (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1 w-fit">
                           <FaCheckCircle className="w-2.5 h-2.5" />
-                          <span>Adequate</span>
+                          <span>Available</span>
                         </span>
                       )}
                     </td>
@@ -293,7 +388,7 @@ export default function AdminInventory() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Colombian Espresso Roast"
+                  placeholder="e.g. Ethiopian Espresso Roast"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#DED4C7] text-xs text-[#3B2314] focus:outline-none"
                 />
               </div>
@@ -316,7 +411,7 @@ export default function AdminInventory() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-[#54433A] mb-1">
-                    Unit (kg, Gallons, Liters) *
+                    Unit (kg, liters, pcs) *
                   </label>
                   <input
                     type="text"
@@ -346,16 +441,36 @@ export default function AdminInventory() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-[#54433A] mb-1">
-                    Supplier
+                    Purchase Price ($)
                   </label>
                   <input
-                    type="text"
-                    value={formData.supplierId}
-                    onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
-                    placeholder="e.g. Highland Roasters"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.purchasePrice}
+                    onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+                    placeholder="22.50"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-[#DED4C7] text-xs text-[#3B2314] focus:outline-none"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-[#54433A] mb-1">
+                  Assigned Supplier
+                </label>
+                <select
+                  value={formData.supplierId}
+                  onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#DED4C7] text-xs font-bold text-[#3B2314] focus:outline-none"
+                >
+                  <option value="">Direct Market / Local</option>
+                  {suppliers.map((s) => (
+                    <option key={s._id} value={s.name}>
+                      {s.name} ({s.companyName || s.name})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">

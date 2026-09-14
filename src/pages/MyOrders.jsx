@@ -173,4 +173,8 @@ export default function MyOrders() {
       </div>
     </div>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 305e77c (added ai recomandation on admin panel)

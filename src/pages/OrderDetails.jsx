@@ -307,4 +307,8 @@ export default function OrderDetails() {
       </div>
     </div>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 305e77c (added ai recomandation on admin panel)

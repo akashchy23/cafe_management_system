@@ -73,12 +73,6 @@ export function AuthProvider({ children }) {
     return res.data
   }
 
-  const makeAdmin = async (targetEmail) => {
-    const res = await api.post('/api/users/make-admin', { targetEmail })
-    await refreshUser()
-    return res.data
-  }
-
   const isAdmin = dbUser?.role === 'admin'
 
   return (
@@ -91,7 +85,6 @@ export function AuthProvider({ children }) {
         logout,
         refreshUser,
         updateUserProfile,
-        makeAdmin,
       }}
     >
       {!loading && children}

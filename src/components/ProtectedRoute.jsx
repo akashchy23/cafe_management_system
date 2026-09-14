@@ -18,4 +18,8 @@ export default function ProtectedRoute({ children }) {
   }
 
   return children
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 305e77c (added ai recomandation on admin panel)

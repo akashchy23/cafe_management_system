@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext'
 import Swal from 'sweetalert2'
 
 export default function Profile() {
-  const { user, dbUser, isAdmin, updateUserProfile, makeAdmin } = useAuth()
+  const { user, dbUser, isAdmin, updateUserProfile } = useAuth()
   const { cartCount } = useCart()
 
   const [isEditing, setIsEditing] = useState(false)
@@ -47,25 +47,6 @@ export default function Profile() {
       })
     } finally {
       setIsSaving(false)
-    }
-  }
-
-  const handleToggleAdminDemo = async () => {
-    try {
-      await makeAdmin(user.email)
-      Swal.fire({
-        icon: 'success',
-        title: 'Admin Access Granted!',
-        text: 'You now have full access to the Admin Dashboard & Management features.',
-        confirmButtonColor: '#6F4E37',
-      })
-    } catch (err) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Failed to toggle admin role.',
-        confirmButtonColor: '#6F4E37',
-      })
     }
   }
 
@@ -114,17 +95,6 @@ export default function Profile() {
                 <span>Firebase UID: {user?.uid}</span>
               </p>
             </div>
-
-            {!isAdmin && (
-              <button
-                onClick={handleToggleAdminDemo}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-all flex items-center gap-1.5 shadow-2xs"
-                title="Enable admin role for demo purposes"
-              >
-                <FaShieldAlt />
-                <span>Switch to Admin Role</span>
-              </button>
-            )}
           </div>
 
           {/* Quick Metrics */}

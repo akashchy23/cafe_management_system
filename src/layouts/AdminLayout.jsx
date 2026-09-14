@@ -14,6 +14,10 @@ import {
   FaBars,
   FaTimes,
   FaShieldAlt,
+  FaUserTie,
+  FaChartLine,
+  FaFileAlt,
+  FaBell,
 } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
@@ -25,9 +29,14 @@ const NAV_ITEMS = [
   { path: '/admin/menu', label: 'Food Menu Items', icon: FaUtensils },
   { path: '/admin/categories', label: 'Food Categories', icon: FaTags },
   { path: '/admin/customers', label: 'Customer Directory', icon: FaUsers },
-  { path: '/admin/reservations', label: 'Table Reservations', icon: FaCalendarAlt },
-  { path: '/admin/inventory', label: 'Inventory & Low Stock', icon: FaBoxes },
+  { path: '/admin/employees', label: 'Employee Staff', icon: FaUserTie },
+  { path: '/admin/reservations', label: 'Table Bookings', icon: FaCalendarAlt },
+  { path: '/admin/inventory', label: 'Inventory & Stock', icon: FaBoxes },
   { path: '/admin/suppliers', label: 'Suppliers Directory', icon: FaTruck },
+  { path: '/admin/coupons', label: 'Coupons & Promos', icon: FaTags },
+  { path: '/admin/analytics', label: 'Sales Analytics', icon: FaChartLine },
+  { path: '/admin/reports', label: 'Revenue Reports', icon: FaFileAlt },
+  { path: '/admin/notifications', label: 'Send Notifications', icon: FaBell },
 ]
 
 export default function AdminLayout() {
@@ -78,7 +87,7 @@ export default function AdminLayout() {
       <div className="md:hidden bg-[#2C1810] text-white px-4 py-3 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2">
           <FaShieldAlt className="text-amber-400" />
-          <span className="font-extrabold text-sm tracking-wide">Cafe Admin Panel</span>
+          <span className="font-extrabold text-sm tracking-wide">Cafe Admin Center</span>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -90,15 +99,15 @@ export default function AdminLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed md:sticky top-0 z-30 h-screen w-64 bg-[#2C1810] text-[#E0D3C5] p-5 flex flex-col justify-between transition-transform duration-300 ${
+        className={`fixed md:sticky top-0 z-30 h-screen w-64 bg-[#2C1810] text-[#E0D3C5] p-5 flex flex-col justify-between transition-transform duration-300 overflow-y-auto ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
-        <div className="space-y-6">
+        <div className="space-y-5">
           
           {/* Admin Brand */}
           <div className="flex items-center gap-3 px-2">
-            <div className="w-10 h-10 rounded-2xl bg-amber-600 flex items-center justify-center text-white font-black text-lg shadow-md">
+            <div className="w-10 h-10 rounded-2xl bg-amber-600 flex items-center justify-center text-white font-black text-lg shadow-md shrink-0">
               <FaShieldAlt />
             </div>
             <div>
@@ -122,9 +131,9 @@ export default function AdminLayout() {
                   end={item.end}
                   onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    `flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                       isActive
-                        ? 'bg-amber-700/80 text-white shadow-sm ring-1 ring-amber-500/30'
+                        ? 'bg-amber-700/90 text-white shadow-sm ring-1 ring-amber-500/30'
                         : 'text-[#C5B5A7] hover:bg-[#3D251A] hover:text-white'
                     }`
                   }
@@ -138,7 +147,7 @@ export default function AdminLayout() {
         </div>
 
         {/* Bottom Actions */}
-        <div className="pt-4 border-t border-[#432A1F] space-y-3">
+        <div className="pt-4 border-t border-[#432A1F] space-y-2 mt-4 shrink-0">
           
           {/* Quick Seed Button */}
           <button

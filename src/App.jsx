@@ -20,6 +20,10 @@ import Reservations from './pages/Reservations'
 import Profile from './pages/Profile'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Recommendations from './pages/Recommendations'
+import GroupOrdering from './pages/GroupOrdering'
+import Favorites from './pages/Favorites'
+import Notifications from './pages/Notifications'
 
 // Admin Layout & Pages
 import AdminLayout from './layouts/AdminLayout'
@@ -28,9 +32,14 @@ import AdminMenu from './pages/admin/AdminMenu'
 import AdminCategories from './pages/admin/AdminCategories'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminCustomers from './pages/admin/AdminCustomers'
+import AdminEmployees from './pages/admin/AdminEmployees'
 import AdminReservations from './pages/admin/AdminReservations'
 import AdminInventory from './pages/admin/AdminInventory'
 import AdminSuppliers from './pages/admin/AdminSuppliers'
+import AdminCoupons from './pages/admin/AdminCoupons'
+import AdminAnalytics from './pages/admin/AdminAnalytics'
+import AdminReports from './pages/admin/AdminReports'
+import AdminNotifications from './pages/admin/AdminNotifications'
 
 export default function App() {
   return (
@@ -52,9 +61,14 @@ export default function App() {
               <Route path="categories" element={<AdminCategories />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="customers" element={<AdminCustomers />} />
+              <Route path="employees" element={<AdminEmployees />} />
               <Route path="reservations" element={<AdminReservations />} />
               <Route path="inventory" element={<AdminInventory />} />
               <Route path="suppliers" element={<AdminSuppliers />} />
+              <Route path="coupons" element={<AdminCoupons />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="reports" element={<AdminReports />} />
+              <Route path="notifications" element={<AdminNotifications />} />
             </Route>
 
             {/* Customer Storefront & Public Routes */}
@@ -69,6 +83,7 @@ export default function App() {
                       <Route path="/about" element={<About />} />
                       <Route path="/menu" element={<Menu />} />
                       <Route path="/menu/:id" element={<FoodDetails />} />
+                      <Route path="/recommendations" element={<Recommendations />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/register" element={<Register />} />
 
@@ -118,6 +133,38 @@ export default function App() {
                         element={
                           <ProtectedRoute>
                             <Profile />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/favorites"
+                        element={
+                          <ProtectedRoute>
+                            <Favorites />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/group-order"
+                        element={
+                          <ProtectedRoute>
+                            <GroupOrdering />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/group-order/:sessionId"
+                        element={
+                          <ProtectedRoute>
+                            <GroupOrdering />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/notifications"
+                        element={
+                          <ProtectedRoute>
+                            <Notifications />
                           </ProtectedRoute>
                         }
                       />
